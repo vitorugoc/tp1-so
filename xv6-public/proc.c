@@ -6,6 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include <stddef.h>
 
 struct {
   struct spinlock lock;
@@ -97,13 +98,14 @@ get_shortest_job(int priority) {
 struct proc* 
 get_lottery_winner(void) {
     int total_tickets = 0;
+    int index = 0;
     for (int i = 0; i < NPROC; i++) {
         if (ptable.proc[i].state == RUNNABLE) {
             total_tickets += ptable.proc[i].tickets;
         }
     }
 
-    int lottery_number = rand() % total_tickets;
+    int lottery_number = (index + 1) % total_tickets;
 
     int accumulated_tickets = 0;
     for (int i = 0; i < NPROC; i++) {
@@ -191,7 +193,7 @@ aging_priority_1(void) {
 
     for (p = q->head; p != NULL; p = p->next) {
         if (ticks - p->ctime > TO2) {
-          change_prio(ROUND_ROBIN)
+          change_prio(ROUND_ROBIN);
         }
     }
 }
@@ -203,7 +205,7 @@ aging_priority_2(void) {
 
     for (p = q->head; p != NULL; p = p->next) {
         if (ticks - p->ctime > TO3) {
-          change_prio(SJF)
+          change_prio(SJF);
         }
     }
 }
@@ -558,6 +560,8 @@ int wait2(int *retime, int *rutime, int *stime) {
 void 
 scheduler(void) {
     struct proc* p;
+    struct cpu *c = mycpu();
+    c->proc = 0;
     for (;;) {
         // Procura a fila com a prioridade mais alta que não está vazia
         int priority;
@@ -573,17 +577,17 @@ scheduler(void) {
 
         // Seleciona o processo com base na política de escalonamento
         switch (priority) {
-            case FIFO:
+            case 0:
                 p = dequeue_process(priority);
                 break;
-            case ROUND_ROBIN:
+            case 1:
                 p = get_next_round_robin(priority);
                 break;
-            case SJF:
+            case 2:
                 p = get_shortest_job(priority);
                 break;
-            case LOTTERY:
-                p = get_lottery_winner(priority);
+            case 3:
+                p = get_lottery_winner();
                 break;
             default:
                 p = NULL;
@@ -594,9 +598,10 @@ scheduler(void) {
         }
 
         // Executa o processo
+        c->proc = p;
         switchuvm(p);
         p->state = RUNNING;
-        swtch(&cpu->scheduler, p->context);
+        swtch(&(c->scheduler), p->context);
         switchkvm();
 
         if(priority == ROUND_ROBIN && p->rtime >= TIME_SLICE){
