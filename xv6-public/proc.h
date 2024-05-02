@@ -40,7 +40,7 @@ enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 // Per-process state
 struct proc {
   uint sz;                     // Size of process memory (bytes)
-  uint ctime                   // Creation time of process
+  uint ctime;                   // Creation time of process
   pde_t* pgdir;                // Page table
   char *kstack;                // Bottom of kernel stack for this process
   enum procstate state;        // Process state
@@ -54,10 +54,9 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   struct proc* next;           // Pointer to the next process on the queue
-  int rtime                    // Process execution time
-  int tickets                  // Process number of tickets
-  int priority                 // Process priority
-  uint ctime;                  // Tempo quando o processo foi criado
+  int rtime;                    // Process execution time
+  int tickets;                  // Process number of tickets
+  int priority;                 // Process priority
   int stime;                   // Tempo SLEEPING
   int retime;                  // Tempo READY(RUNNABLE) time
   int rutime;                  // Tempo executando (RUNNING)
